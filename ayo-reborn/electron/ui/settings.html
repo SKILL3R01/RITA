@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Rita settings</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 18px 20px; font: 13px/1.45 "Segoe UI", system-ui, sans-serif;
+      background: #121417; color: #e8eaed;
+    }
+    h1 { font-size: 16px; margin: 0 0 14px; color: #7dd3c8; letter-spacing: .3px; }
+    .section { background: #1a1e23; border: 1px solid #2a2f36; border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; }
+    .label { font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: #9aa3ab; margin-bottom: 6px; }
+    .row { display: flex; gap: 10px; align-items: center; }
+    input[type="text"], input[type="number"], select {
+      background: #0e1114; color: #e8eaed; border: 1px solid #2a2f36; border-radius: 8px;
+      padding: 7px 10px; font-size: 13px; width: 100%;
+    }
+    input[type="range"] { width: 160px; }
+    input[type="checkbox"] { width: auto; }
+    button {
+      background: #24413c; color: #bfe9df; border: 1px solid #3d6a60; border-radius: 8px;
+      padding: 7px 14px; font-size: 13px; cursor: pointer;
+    }
+    button:hover { background: #2d544c; }
+    button.warn { background: #46242a; border-color: #6e3238; color: #f2c8cf; }
+    button:disabled { opacity: .45; cursor: default; }
+    .hint { color: #8b949e; font-size: 11.5px; margin-top: 5px; }
+    #status { min-height: 18px; color: #7dd3c8; margin-top: 8px; font-size: 12.5px; }
+    #status.err { color: #f094a0; }
+    .footer { display: flex; gap: 10px; margin-top: 10px; }
+    .mono { font-family: Consolas, monospace; font-size: 10.5px; color: #66707c; word-break: break-all; }
+    .sliderVal { width: 48px; text-align: right; color: #7dd3c8; }
+    #cloneStatus { white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1 id="title">Assistant settings</h1>
+
+  <div class="section">
+    <div class="label">Name</div>
+    <input type="text" id="name" placeholder="Rita" maxlength="24">
+    <div class="hint">What she calls herself in conversation. The <b>wake word</b> is being trained separately ("Wiem").</div>
+  </div>
+
+  <div class="section">
+    <div class="label">Voice</div>
+    <select id="ttsVoice"></select>
+    <div class="row" style="margin-top:8px">
+      <label class="row" style="gap:6px"><input type="checkbox" id="kokoroOn"> Natural live voice (Kokoro)</label>
+    </div>
+    <select id="kokoroVoice" style="margin-top:6px">
+      <optgroup label="British — female">
+        <option value="bf_emma">Emma — warm</option>
+        <option value="bf_isabella">Isabella — expressive</option>
+        <option value="bf_lily">Lily — calm</option>
+        <option value="bf_alice">Alice — light</option>
+      </optgroup>
+      <optgroup label="British — male">
+        <option value="bm_george">George</option>
+        <option value="bm_daniel">Daniel</option>
+        <option value="bm_fable">Fable</option>
+        <option value="bm_lewis">Lewis</option>
+      </optgroup>
+      <optgroup label="American — female">
+        <option value="af_heart">Heart — bright</option>
+        <option value="af_bella">Bella — warm</option>
+        <option value="af_nicole">Nicole — soft</option>
+        <option value="af_nova">Nova</option>
+        <option value="af_sky">Sky</option>
+        <option value="af_alloy">Alloy</option>
+        <option value="af_aoede">Aoede</option>
+        <option value="af_jessica">Jessica</option>
+        <option value="af_kore">Kore</option>
+        <option value="af_sarah">Sarah</option>
+        <option value="af_taylor">Taylor</option>
+      </optgroup>
+      <optgroup label="American — male">
+        <option value="am_adam">Adam</option>
+        <option value="am_echo">Echo</option>
+        <option value="am_eric">Eric</option>
+        <option value="am_fenrir">Fenrir</option>
+        <option value="am_liam">Liam</option>
+        <option value="am_michael">Michael</option>
+        <option value="am_onyx">Onyx</option>
+        <option value="am_puck">Puck</option>
+      </optgroup>
+    </select>
+    <div class="row" style="margin-top:8px">
+      <button id="testVoice">Say a test line</button>
+      <label class="row" style="gap:6px"><input type="checkbox" id="signatureVoice"> Use signature voice</label>
+    </div>
+    <div class="hint">Test plays a cached signature line first (your cloned voice once cloning is done),
+    then the live voice (Kokoro → Piper fallback). Repeated replies ("Okay.", "Done.") play instantaneously
+    from the signature cache; streaming replies use the live voice.</div>
+  </div>
+
+  <div class="section">
+    <div class="label" id="cloneLabel">Voice cloning</div>
+    <div class="hint" style="margin-bottom:8px">Record ~20 s of <b>your own</b> speaking normally (only voices you have
+    consent to clone), then regenerate every cached signature line in that voice — all local.</div>
+    <div class="row">
+      <button id="cloneRecord">1 · Record ~20 s of my voice</button>
+      <button id="cloneGenerate" disabled>2 · Regenerate signature voice</button>
+    </div>
+    <div class="hint" id="cloneStatus"></div>
+  </div>
+
+  <div class="section">
+    <div class="label">Microphone</div>
+    <select id="micDevice"></select>
+    <div class="hint">"Windows default microphone" uses the OS default input. Applies immediately.</div>
+  </div>
+
+  <div class="section">
+    <div class="label">Sensitivity</div>
+    <div class="row">
+      <span class="label" style="margin-bottom:0; width:120px">Wake threshold</span>
+      <input type="range" id="wakeThreshold" min="0.30" max="0.70" step="0.01">
+      <span class="sliderVal" id="wakeThresholdVal">0.42</span>
+    </div>
+    <div class="hint">Lower = more eager to catch "Wiem"/"Ayo"; higher = fewer false wakes.</div>
+    <div class="row" style="margin-top:10px">
+      <span class="label" style="margin-bottom:0; width:120px">In-session</span>
+      <input type="range" id="sessionRms" min="0.004" max="0.030" step="0.001">
+      <span class="sliderVal" id="sessionRmsVal">0.007</span>
+    </div>
+    <div class="hint">During a conversation she triggers on voice energy — lower this if she misses
+    quieter mid-conversation sentences (no wake word needed).</div>
+    <div class="row" style="margin-top:10px">
+      <span class="label" style="margin-bottom:0; width:120px">Silence after</span>
+      <input type="number" id="sessionSilenceMs" min="10" max="120" step="5" style="width:70px">
+      <span>seconds → session ends</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="label">Behavior</div>
+    <label class="row" style="gap:8px; margin-bottom:6px"><input type="checkbox" id="confirmAgent"> Ask "yes?" before running agent actions</label>
+    <label class="row" style="gap:8px; margin-bottom:6px"><input type="checkbox" id="internetRead"> Read internet links for me (opt-in: fetches only the link you say, then summarizes locally)</label>
+    <label class="row" style="gap:8px"><input type="checkbox" id="mute"> Muted (screen/text still works)</label>
+  </div>
+
+  <div class="section">
+    <div class="label">Models</div>
+    <div class="row" style="margin-bottom:8px">
+      <span style="width:90px">Chat:</span><select id="ollamaModel">
+        <option value="qwen2.5:7b-instruct">qwen2.5 7b-instruct (better — GPU verified)</option>
+        <option value="qwen2.5:3b">qwen2.5 3b (lightest)</option>
+      </select>
+    </div>
+    <div class="row">
+      <span style="width:90px">Vision:</span><select id="visionModel">
+        <option value="qwen2.5vl:3b">qwen2.5vl 3b (default)</option>
+        <option value="moondream">moondream</option>
+      </select>
+    </div>
+    <div style="margin-top:10px" class="row">
+      <button id="pullModel">Pull &amp; apply</button>
+      <span class="hint">downloads the model on first use (local, from Ollama)</span>
+    </div>
+  </div>
+
+  <div class="footer">
+    <button id="saveBtn"><b>Save</b></button>
+    <button id="restartBtn" class="warn">Restart assistant</button>
+    <button id="closeBtn" style="margin-left:auto">Close</button>
+  </div>
+  <div id="status"></div>
+  <div class="mono" id="settingsPath"></div>
+
+  <script src="settings.js"></script>
+</body>
+</html>

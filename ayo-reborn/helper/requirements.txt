@@ -1,0 +1,7 @@
+# Rita helper — Python dependencies (Python 3.14, CPU)
+sounddevice>=0.5
+websockets>=13
+numpy>=2.0
+openwakeword>=0.6
+onnxruntime>=1.20
+faster-whisper>=1.2

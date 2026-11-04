@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="overlay.css">
+</head>
+<body>
+  <div id="pill" class="drag">
+    <div id="statusRow">
+      <span id="dot" class="dot idle"></span>
+      <span id="statusText">starting…</span>
+      <span id="spacer"></span>
+      <span id="hintSpan" class="hint">"Ayo" wakes me · L push · S screen · X read</span>
+      <button id="dashBtn" class="nodrag" title="dashboard (Ctrl+Alt+D)" label="d">◫</button>
+      <button id="muteBtn" class="nodrag" title="mute (Ctrl+Alt+M)" label="m">🔇</button>
+      <button id="hideBtn" class="nodrag" title="hide (Ctrl+Alt+R)">✕</button>
+    </div>
+    <div id="lineYou" class="line"></div>
+    <div id="lineA" class="line"></div>
+  </div>
+  <script src="overlay.js"></script>
+</body>
+</html>

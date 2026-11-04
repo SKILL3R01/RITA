@@ -1,0 +1,17 @@
+node_modules/
+dist/
+release/
+out/
+build/
+*.log
+__pycache__/
+*.pyc
+.venv/
+helper/.dev-key
+helper/.dev-key.txt
+helper/.test-key
+helper/*.key
+*.wav
+*.pcm
+temp/
+.DS_Store

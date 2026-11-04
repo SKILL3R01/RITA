@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Rita dashboard</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 18px 20px; font: 13px/1.45 "Segoe UI", system-ui, sans-serif;
+      background: #121417; color: #e8eaed;
+    }
+    h1 { font-size: 16px; margin: 0 0 14px; color: #7dd3c8; letter-spacing: .3px; }
+    h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: #9aa3ab; margin: 0 0 8px; }
+    .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+    .tile { background: #1a1e23; border: 1px solid #2a2f36; border-radius: 10px; padding: 10px 12px; }
+    .tile .t { font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: #9aa3ab; }
+    .tile .big { font-size: 13px; color: #e8eaed; margin-top: 3px; }
+    .tile .sub { font-size: 11.5px; color: #8fa0a8; margin-top: 2px; }
+    .ok { color: #7ee2b8; } .warn { color: #f2b96d; } .down { color: #f27979; }
+    .section { background: #1a1e23; border: 1px solid #2a2f36; border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; }
+    .rowline {
+      display: flex; gap: 8px; align-items: center; padding: 6px 0;
+      border-bottom: 1px solid #232a31; font-size: 12.5px;
+    }
+    .rowline:last-child { border-bottom: none; }
+    .rowline .when { color: #8fa0a8; font-size: 11px; white-space: nowrap; min-width: 74px; }
+    .rowline .grow { flex: 1; }
+    .x { background: #3a2026; color: #f2a7a7; border: 1px solid #55333b; border-radius: 6px; cursor: pointer; }
+    .x:hover { background: #4d2830; }
+    .empty { color: #6d7a82; font-size: 12px; padding: 6px 0; }
+    .you { color: #b8e6dc; }
+    .her { color: #e8eaed; }
+    #foot { color: #6d7a82; font-size: 11px; }
+    button.rev {
+      background: #24413c; color: #bfe9df; border: 1px solid #3d6a60; border-radius: 6px;
+      padding: 3px 9px; font-size: 11px; cursor: pointer;
+    }
+    button.rev:hover { background: #2c5049; }
+  </style>
+</head>
+<body>
+  <h1 id="title">Rita — control room</h1>
+
+  <div class="tiles">
+    <div class="tile">
+      <div class="t">brain</div>
+      <div class="big" id="tBrain">—</div>
+      <div class="sub" id="tBrainSub"></div>
+    </div>
+    <div class="tile">
+      <div class="t">ears &amp; wake</div>
+      <div class="big" id="tEars">—</div>
+      <div class="sub" id="tEarsSub"></div>
+    </div>
+    <div class="tile">
+      <div class="t">voice</div>
+      <div class="big" id="tVoice">—</div>
+      <div class="sub" id="tVoiceSub"></div>
+    </div>
+    <div class="tile">
+      <div class="t">memory</div>
+      <div class="big" id="tMemory">—</div>
+      <div class="sub" id="tMemorySub"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>what she remembers</h2>
+    <div id="facts"></div>
+  </div>
+
+  <div class="section">
+    <h2>check-ins she's holding for you</h2>
+    <div id="followups"></div>
+  </div>
+
+  <div class="section">
+    <h2>approved forever</h2>
+    <div id="approvals"></div>
+  </div>
+
+  <div class="section">
+    <h2>last things heard &amp; said</h2>
+    <div id="turns"></div>
+  </div>
+
+  <div id="foot">(refreshes every 3 s — facts, approvals and check-ins deleted here are gone for good)</div>
+  <script src="dashboard.js"></script>
+</body>
+</html>

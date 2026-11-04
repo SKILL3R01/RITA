@@ -1,0 +1,15 @@
+# Rita assistant — build artifacts and heavy local-only files stay out of git
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+dist/
+build/
+*.log
+*.tmp
+Thumbs.db
+.DS_Store
+# reverse-engineering working material stays local (extracted third-party code, not clean-room)
+ayo-analysis/
