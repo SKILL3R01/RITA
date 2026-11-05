@@ -26,8 +26,8 @@ const PENDING = {}
 
 // ---------------------------------------------------------------- settings
 const SETTINGS_DEFAULTS = {
-  wakeOnnxPath: process.env.LOCALAPPDATA
-    ? path.join(process.env.LOCALAPPDATA, 'Programs', 'AYO', 'resources', 'wake-word', 'models', 'ayo.onnx')
+  wakeOnnxPath: process.env.APPDATA
+    ? path.join(process.env.APPDATA, 'rita-assistant', 'wakeword', 'wiem.onnx')
     : '',
   wakeThreshold: 0.42,
   wsPort: 8771,
@@ -86,17 +86,54 @@ function helperEnv() {
   }
 }
 
+// Packaged resources: helper exe, kokoro exe, bundled wake model. In dev these
+// live under electron/resources; in an installed app under process.resourcesPath.
+function appResourcesDir() {
+  return app.isPackaged ? process.resourcesPath : path.join(__dirname, 'resources')
+}
+function packagedHelperExe() {
+  return path.join(appResourcesDir(), 'helper', 'rita_listener', 'rita_listener.exe')
+}
+function packagedKokoroExe() {
+  return path.join(appResourcesDir(), 'kokoro', 'kokoro-server', 'kokoro-server.exe')
+}
+// first-run: unpack the bundled wake model if the user's copy is not there yet
+function ensureWakeModel() {
+  try {
+    if (!S.wakeOnnxPath || fs.existsSync(S.wakeOnnxPath)) return
+    fs.mkdirSync(path.dirname(S.wakeOnnxPath), { recursive: true })
+    const bundled = path.join(appResourcesDir(), 'wakeword', 'wiem.onnx')
+    if (fs.existsSync(bundled)) {
+      fs.copyFileSync(bundled, S.wakeOnnxPath)
+      log('wake model unpacked from installer resources')
+    }
+  } catch (e) { log(`wake model preflight failed: ${e.message}`) }
+}
+
 function spawnHelper() {
   launchKey = crypto.randomBytes(32)
-  const py = S.pythonPath || 'python'
-  const cwd = path.join(__dirname, '..', 'helper')
-  log(`spawning helper (${py} -m rita_listener)`)
-  helperChild = spawn(py, ['-m', 'rita_listener'], {
-    cwd,
-    env: helperEnv(),
-    stdio: ['pipe', 'pipe', 'pipe', 'pipe'],  // 3 == the launch-key pipe
-    windowsHide: true,
-  })
+  let child
+  const hexe = packagedHelperExe()
+  if (fs.existsSync(hexe)) {
+    log('spawning helper (packaged rita_listener.exe)')
+    child = spawn(hexe, [], {
+      cwd: path.dirname(hexe),
+      env: helperEnv(),
+      stdio: ['pipe', 'pipe', 'pipe', 'pipe'],  // 3 == the launch-key pipe
+      windowsHide: true,
+    })
+  } else {
+    const py = S.pythonPath || 'python'
+    const cwd = path.join(__dirname, '..', 'helper')
+    log(`spawning helper (${py} -m rita_listener)`)
+    child = spawn(py, ['-m', 'rita_listener'], {
+      cwd,
+      env: helperEnv(),
+      stdio: ['pipe', 'pipe', 'pipe', 'pipe'],  // 3 == the launch-key pipe
+      windowsHide: true,
+    })
+  }
+  helperChild = child
   // Write the 32-byte launch key to fd 3 immediately — never argv/env/logs.
   try { helperChild.stdio[3].write(launchKey) } catch (e) { log(`fd3 key write failed: ${e.message}`) }
   helperChild.stdout.on('data', (d) => log(`helper: ${String(d).trim()}`))
@@ -1579,11 +1616,18 @@ function kokoroWorkerArgs() {
 function ensureKokoroWorker() {
   if (S.ttsKokoro === false || kokoroBroken) return false
   if (kokoroProc && kokoroProc.exitCode === null) return kokoroReady
-  const args = [path.join(__dirname, 'scripts', 'kokoro-server.py'), ...kokoroWorkerArgs()]
-  log(`[tts] starting kokoro worker (${kokoroWorkerArgs().slice(1).join(' ')}) — first run downloads the model once`)
+  const wargs = kokoroWorkerArgs()
+  const kex = packagedKokoroExe()
+  log(`[tts] starting kokoro worker (${wargs.join(' ')}) — first run downloads the model once`)
   let proc
   try {
-    proc = spawn(S.pythonPath || 'python', args, { env: { ...process.env, PYTHONIOENCODING: 'utf-8' }, windowsHide: true })
+    if (fs.existsSync(kex)) {
+      proc = spawn(kex, wargs, { env: { ...process.env, PYTHONIOENCODING: 'utf-8' }, windowsHide: true })
+    } else {
+      proc = spawn(S.pythonPath || 'python',
+        [path.join(__dirname, 'scripts', 'kokoro-server.py'), ...wargs],
+        { env: { ...process.env, PYTHONIOENCODING: 'utf-8' }, windowsHide: true })
+    }
   } catch (e) {
     log(`[tts] kokoro spawn failed: ${e.message}`)
     kokoroBroken = true
@@ -2103,11 +2147,31 @@ ipcMain.handle('memory:approve-revoke', (_e, key) => {
   return { ok: false }
 })
 
+// ---- P3: brain presence + one-click install for fresh machines ----
+ipcMain.handle('ollama:status', async () => {
+  const t0 = Date.now()
+  let ok = false
+  try {
+    const r = await fetch(`${S.ollamaUrl}/api/tags`, { signal: AbortSignal.timeout(1500) })
+    ok = r.ok
+  } catch { ok = false }
+  return { ok, model: S.ollamaModel, ms: Date.now() - t0 }
+})
+ipcMain.handle('ollama:install-winget', () => new Promise((resolve) => {
+  // winget can take several minutes; UI waits on "installing…" until this resolves
+  const p = spawn('cmd.exe',
+    ['/c', 'winget', 'install', '-e', '--id', 'Ollama.Ollama', '--accept-source-agreements', '--accept-package-agreements'],
+    { windowsHide: true })
+  p.on('error', (e) => resolve({ ok: false, error: `winget failed: ${e.message}` }))
+  p.on('close', (code) => resolve({ ok: code === 0, code }))
+}))
+
 // ---------------------------------------------------------------- lifecycle
 const gotLock = app.requestSingleInstanceLock()
 if (!gotLock) { app.quit() } else {
   app.whenReady().then(() => {
     loadSettings()
+    ensureWakeModel()
     createOverlay()
     spawnHelper()
     setTimeout(connectHelper, 2000)  // give the helper a moment to boot before first connect

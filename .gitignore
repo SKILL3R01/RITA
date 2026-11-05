@@ -13,3 +13,7 @@ Thumbs.db
 .DS_Store
 # reverse-engineering working material stays local (extracted third-party code, not clean-room)
 ayo-analysis/
+# packaged build outputs live on GitHub Releases, never in git
+ayo-reborn/dist/
+ayo-reborn/electron/resources/
+ayo-reborn/build/

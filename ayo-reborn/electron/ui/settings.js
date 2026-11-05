@@ -114,6 +114,41 @@ $('pullModel').addEventListener('click', async () => {
   showStatus(r && r.ok ? ('Pulling ' + (r.model || '') + '…') : 'Pull failed: ' + ((r && r.error) || 'unknown'), !(r && r.ok))
 })
 
+async function refreshOllamaStatus() {
+  const el = document.getElementById('ollamaStatus')
+  const btn = document.getElementById('installOllama')
+  if (!el) return
+  try {
+    const r = await window.rita.ollamaStatus()
+    if (r.ok) {
+      el.textContent = 'Ollama running ✓'
+      el.className = 'ok'
+      btn.style.display = 'none'
+    } else {
+      el.textContent = 'Ollama not detected'
+      el.className = 'warn'
+      btn.style.display = ''
+    }
+  } catch {
+    el.textContent = 'Ollama not detected'
+    el.className = 'warn'
+    btn.style.display = ''
+  }
+}
+document.getElementById('installOllama').addEventListener('click', async () => {
+  const el = document.getElementById('ollamaStatus')
+  const btn = document.getElementById('installOllama')
+  btn.disabled = true
+  if (el) el.textContent = 'installing Ollama via winget… (this can take a few minutes)'
+  const r = await window.rita.ollamaInstallWinget()
+  btn.disabled = false
+  if (r.ok) showStatus('Ollama installed — starting it may take a minute.')
+  else showStatus('winget install failed — install Ollama from ollama.com manually.', true)
+  await refreshOllamaStatus()
+})
+refreshOllamaStatus()
+setInterval(refreshOllamaStatus, 15000)
+
 $('restartBtn').addEventListener('click', async () => {
   await window.rita.settingsApply(collectPatch())
   showStatus('Restarting…')

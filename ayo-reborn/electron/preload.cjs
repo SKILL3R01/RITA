@@ -23,4 +23,6 @@ contextBridge.exposeInMainWorld('rita', {
   memoryFactDelete: (id) => ipcRenderer.invoke('memory:fact-delete', id),
   memoryFollowupDelete: (id) => ipcRenderer.invoke('memory:followup-delete', id),
   memoryApproveRevoke: (key) => ipcRenderer.invoke('memory:approve-revoke', key),
+  ollamaStatus: () => ipcRenderer.invoke('ollama:status'),
+  ollamaInstallWinget: () => ipcRenderer.invoke('ollama:install-winget'),
 })
