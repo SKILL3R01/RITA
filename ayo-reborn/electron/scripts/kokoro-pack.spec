@@ -2,12 +2,13 @@
 # Rita packaged live-voice worker: Kokoro-82M onnx engine, no Python needed on
 # the user's PC. Model/voice files are downloaded (or resumable) at runtime.
 import os
+from PyInstaller.utils.hooks import collect_data_files
 
 a = Analysis(
     ['kokoro-server.py'],
     pathex=[os.path.abspath('.')],
     binaries=None,
-    datas=None,
+    datas=collect_data_files('kokoro_onnx'),  # config.json (espeak data inbox) travels with the package
     hiddenimports=['onnxruntime', 'onnxruntime.capi', 'numpy', 'requests'],
     excludes=['torch', 'tkinter', 'matplotlib', 'PIL'],
     noarchive=False,
