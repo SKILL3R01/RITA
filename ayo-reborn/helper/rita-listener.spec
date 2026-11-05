@@ -7,6 +7,7 @@ from PyInstaller.utils.hooks import collect_data_files, collect_dynamic_libs
 
 datas = []
 datas += collect_data_files('openwakeword')          # melspectrogram / VAD resource onnx files
+datas += collect_data_files('faster_whisper')        # assets/silero_vad_v6.onnx — VAD for transcribe(vad_filter=True)
 datas += collect_dynamic_libs('sounddevice')         # portaudio DLL ships inside the package
 
 a = Analysis(
