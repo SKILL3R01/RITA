@@ -1,5 +1,9 @@
 # PyInstaller entry for the packaged listener.
-# Runs the rita_listener package's __main__ so all import paths stay normal.
-import runpy
+# Mirrors `python -m rita_listener` (which executes __main__.py -> main.main())
+# with a straight import chain — no runpy, so the frozen build has no dynamic
+# module lookups at all.
+import sys
 
-runpy.run_module('rita_listener', run_name='__main__')
+from rita_listener.main import main
+
+sys.exit(main())
